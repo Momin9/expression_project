@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facial Expression Detection</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.css">
+  <style>
+    .gradient-custom-2 {
+      background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+    }
+    .card-custom {
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <section class="h-100 gradient-form" style="background-color: #eee;">
+    <div class="container py-5">
+      <div class="row">
+        <div class="col-md-12 text-center mb-4">
+          <h1>Facial Expression Detection</h1>
+          <p class="text-muted">Upload an image or capture from the camera to detect your expression.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card card-custom">
+            <div class="card-body text-center">
+              <h5 class="card-title">Upload Image</h5>
+              <p class="card-text">Choose an image from your device to detect the expression.</p>
+              <form id="upload-form" enctype="multipart/form-data" method="POST">
+                {% csrf_token %}
+                <input type="file" id="image" name="image" accept="image/*" class="form-control mb-3">
+                <button type="button" onclick="captureExpression()" class="btn btn-primary gradient-custom-2">Detect Expression</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card card-custom">
+            <div class="card-body text-center">
+              <h5 class="card-title">Capture from Camera</h5>
+              <p class="card-text">Use your device's camera to capture an image.</p>
+              <video id="camera" autoplay class="w-100 mb-3"></video>
+              <canvas id="camera-canvas" style="display:none;"></canvas>
+              <button type="button" onclick="captureFromCamera()" class="btn btn-primary gradient-custom-2">Capture</button>
+              <button type="button" onclick="captureExpression()" class="btn btn-primary gradient-custom-2 mt-2">Detect Expression</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-md-12 text-center">
+          <div class="card card-custom">
+            <div class="card-body">
+              <h5 class="card-title">Result</h5>
+              <p id="result" class="card-text">Your detected expression and emoji will appear here.</p>
+              <button type="button" onclick="clearResult()" class="btn btn-secondary mt-3">Clear Result</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.js"></script>
+  <script>
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('camera-canvas');
+    const constraints = { video: true };
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+      } catch (err) {
+        console.error("Error accessing the camera: ", err);
+      }
+    }
+    startCamera();
+
+    function captureFromCamera() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        window.cameraBlob = blob;
+      });
+    }
+
+    async function captureExpression() {
+      const form = new FormData(document.getElementById('upload-form'));
+      if (window.cameraBlob) {
+        form.append('camera_image', window.cameraBlob, 'camera_image.jpg');
+      }
+
+      const response = await fetch('/capture-expression/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: form,
+      });
+
+      const data = await response.json();
+      if (data.expression && data.emoji) {
+        document.getElementById('result').innerText = `Expression: ${data.expression} ${data.emoji}`;
+      } else {
+        document.getElementById('result').innerText = `Error: ${data.error}`;
+      }
+    }
+
+    function clearResult() {
+      document.getElementById('result').innerText = "Your detected expression and emoji will appear here.";
+      window.cameraBlob = null; // Clear captured image from camera
+      document.getElementById('upload-form').reset(); // Clear file input
+    }
+  </script>
+</body>
+</html>
