@@ -41,35 +41,34 @@ This project is a web application for detecting facial expressions (e.g., happy,
    ```bash
    pip install -r requirements.txt
 
-5. Apply database migrations:
+4. Apply database migrations:
    ```bash
    python manage.py migrate
-6. Open the application in your browser at:
+5. Open the application in your browser at:
    ```arduino
    http://127.0.0.1:8000/
 
 ## Project Structure
+    facial-expression-detection/
+    ├── expression_project/           Main Django project folder
+    │   ├── settings.py               Django settings
+    │   ├── urls.py                   URL configurations
+    │   ├── wsgi.py                   WSGI configuration
+    │   
+    ├── expression_app/               Django app folder
+    │   ├── templates/                HTML templates
+    │   │   └── index.html            Frontend page
+    │   ├── static/                   Static files (CSS, JS, favicon)
+    │   ├── views.py                  Application logic
+    │   ├── urls.py                   App-specific URLs
+    │   
+    ├── expression_model/             Model-related code
+    │   ├── Final_Expression_detection.py   Model definition and loading
+    │   ├── mobilenet_1_0_224_tf_no_top.h5  Pre-trained weights
+    ├── manage.py                     Django's management script
+    ├── requirements.txt              Python dependencies
+    └── README.md                     Project documentation
 
-```plaintext
-facial-expression-detection/
-├── expression_project/          # Main Django project folder
-│   ├── settings.py              # Django settings
-│   ├── urls.py                  # URL configurations
-│   ├── wsgi.py                  # WSGI configuration
-│   ├── ...
-├── expression_app/              # Django app folder
-│   ├── templates/               # HTML templates
-│   │   └── index.html           # Frontend page
-│   ├── static/                  # Static files (CSS, JS, favicon)
-│   ├── views.py                 # Application logic
-│   ├── urls.py                  # App-specific URLs
-│   ├── ...
-├── expression_model/            # Model-related code
-│   ├── Final_Expression_detection.py  # Model definition and loading
-│   ├── mobilenet_1_0_224_tf_no_top.h5 # Pre-trained weights
-├── manage.py                    # Django's management script
-├── requirements.txt             # Python dependencies
-└── README.md                    # Project documentation
 
 
 ## Usage
@@ -88,13 +87,13 @@ facial-expression-detection/
 
 ## Example Expressions
 
-| Expression | Emoji   |
-|------------|---------|
-| Happy      | 😊       |
-| Sad        | 😢       |
-| Angry      | 😡       |
-| Surprised  | 😲       |
-| Neutral    | 😐       |
+| Expression | Emoji |
+|------------|-------|
+| Happy      | 😊    |
+| Sad        | 😢    |
+| Angry      | 😡    |
+| Surprised  | 😲    |
+| Neutral    | 😐    |
 
 ## Known Issues
 
@@ -114,13 +113,14 @@ Ensure that CUDA and cuDNN are properly installed. Refer to TensorFlow's GPU sup
 
 ### CSRF Errors
 If hosting on an external URL (e.g., ngrok), add the URL to `CSRF_TRUSTED_ORIGINS` in `settings.py`:
-```python
+
 CSRF_TRUSTED_ORIGINS = ['https://your-ngrok-url.ngrok-free.app']
 ## Missing Favicon Warning
 
 Add a `favicon.ico` file to the `static` folder and include it in your template:
-```html
-<link rel="icon" href="{% static 'favicon.ico' %}">
+    ```html
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+
 ## License
 
 This project is licensed under the MIT License.
