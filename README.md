@@ -118,8 +118,7 @@ CSRF_TRUSTED_ORIGINS = ['https://your-ngrok-url.ngrok-free.app']
 ## Missing Favicon Warning
 
 Add a `favicon.ico` file to the `static` folder and include it in your template:
-    ```html
-    <link rel="icon" href="{% static 'favicon.ico' %}">
+`<link rel="icon" href="{% static 'favicon.ico' %}">`
 
 ## License
 
