@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Expression Detection</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    .bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: 100%;
+      color: white;
+    }
+    h1 {
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 5px #000;
+    }
+    video#camera {
+      max-width: 90%;
+      max-height: 300px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .btn {
+      margin-top: 15px;
+      padding: 10px 25px;
+      font-size: 16px;
+      border-radius: 25px;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 1.5rem;
+    }
+    #clear-btn {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Video -->
+  <video autoplay muted loop class="bg-video">
+    <source src="{% static 'videos/animation1_video.mp4' %}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Main Content -->
+  <div class="content">
+    <h1>Live Expression Detection</h1>
+    <video id="camera" autoplay></video>
+    <canvas id="camera-canvas" style="display:none;"></canvas>
+    <button class="btn btn-primary" onclick="captureFromCamera()">Capture</button>
+    <button class="btn btn-secondary" onclick="detectExpression()">Detect Expression</button>
+    <div id="result" class="result"></div>
+    <button id="clear-btn" class="btn btn-secondary" onclick="clearResult()">Clear</button>
+  </div>
+
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('camera-canvas');
+    const resultDiv = document.getElementById('result');
+
+    // Start the camera
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Unable to access the camera. Please check your permissions.');
+        console.error(err);
+      }
+    }
+
+    // Capture a frame from the camera
+    function captureFromCamera() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Detect the expression from the captured frame
+    function detectExpression() {
+      canvas.toBlob((blob) => {
+        const formData = new FormData();
+        formData.append('camera_image', blob);
+
+        fetch('/capture-expression/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              resultDiv.textContent = `Error: ${data.error}`;
+            } else {
+              resultDiv.textContent = `Expression: ${data.expression} ${data.emoji}`;
+            }
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+            resultDiv.textContent = 'An error occurred. Please try again.';
+          });
+      });
+    }
+
+    // Clear the result
+    function clearResult() {
+      resultDiv.textContent = '';
+    }
+
+    // Initialize the camera on page load
+    startCamera();
+  </script>
+</body>
+</html>
