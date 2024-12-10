@@ -1,0 +1,2 @@
+static/videos/animation1_video.mp4 filter=lfs diff=lfs merge=lfs -text
+templates/1943483-uhd_3840_2160_25fps.mp4 filter=lfs diff=lfs merge=lfs -text

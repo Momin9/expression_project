@@ -129,5 +129,5 @@ This project is licensed under the MIT License.
 For any questions or suggestions, feel free to contact:
 
 **Name**: Momin Ali  
-**Email**: mominalikhoker589@gmail.com  
+**Email**: [Momin Ali Email](mominalikhoker589@gmail.com)
 **GitHub**: [Momin9](https://github.com/Momin9)

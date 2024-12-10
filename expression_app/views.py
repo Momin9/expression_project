@@ -21,12 +21,10 @@ def detect_expression(image):
     """
     Detect facial expression from the given image.
     """
-    image = preprocess_image(image)  # Preprocess the image
+    image = preprocess_image(image)
 
     # Predict the expression
     prediction = model.predict(image)
-    print("Prediction Probabilities:", prediction)  # Debug: Print raw predictions
-
     expression_map = {
         0: 'happy',
         1: 'sad',
@@ -48,9 +46,21 @@ def detect_expression(image):
 
 def index(request):
     """
-    Renders the homepage.
+    Renders the landing page with two buttons.
     """
     return render(request, 'index.html')
+
+def live_detection(request):
+    """
+    Renders the live detection page.
+    """
+    return render(request, 'live_detection.html')
+
+def image_detection(request):
+    """
+    Renders the image upload detection page.
+    """
+    return render(request, 'image_detection.html')
 
 def capture_expression(request):
     """
@@ -58,10 +68,9 @@ def capture_expression(request):
     """
     if request.method == 'POST':
         try:
-            # Check if an image file is uploaded
             if 'image' in request.FILES:
                 image_data = request.FILES['image']
-            elif 'camera_image' in request.FILES:  # Check if a camera image is provided
+            elif 'camera_image' in request.FILES:
                 image_data = request.FILES['camera_image']
             else:
                 return JsonResponse({'error': 'No image provided'})
