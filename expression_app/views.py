@@ -1,11 +1,13 @@
-from django.shortcuts import render
-from django.http import JsonResponse
 import cv2
 import numpy as np
+from django.http import JsonResponse
+from django.shortcuts import render
+
 from expression_model.Final_Expression_detection import load_expression_model
 
 # Load the model globally
 model = load_expression_model()
+
 
 def preprocess_image(image):
     """
@@ -17,32 +19,40 @@ def preprocess_image(image):
     image = image / 255.0  # Normalize to [0, 1]
     return image
 
+
 def detect_expression(image):
     """
     Detect facial expression from the given image.
     """
-    image = preprocess_image(image)
+    image = preprocess_image(image)  # Preprocess the image
 
     # Predict the expression
     prediction = model.predict(image)
+    print("Prediction Probabilities:", prediction)  # Debug: Print raw predictions
+
     expression_map = {
-        0: 'happy',
-        1: 'sad',
-        2: 'angry',
-        3: 'surprised',
-        4: 'neutral'
+        0: 'angry',
+        1: 'disgust',
+        2: 'fear',
+        3: 'happy',
+        4: 'neutral',
+        5: 'sad',
+        6: 'surprise'
     }
     emoji_map = {
-        'happy': '😊',
-        'sad': '😢',
         'angry': '😡',
-        'surprised': '😲',
-        'neutral': '😐'
+        'disgust': '🤢',
+        'fear': '😨',
+        'happy': '😊',
+        'neutral': '😐',
+        'sad': '😢',
+        'surprise': '😲'
     }
 
     detected_expression = expression_map[np.argmax(prediction)]
     detected_emoji = emoji_map[detected_expression]
     return detected_expression, detected_emoji
+
 
 def index(request):
     """
@@ -50,11 +60,13 @@ def index(request):
     """
     return render(request, 'index.html')
 
+
 def live_detection(request):
     """
     Renders the live detection page.
     """
     return render(request, 'live_detection.html')
+
 
 def image_detection(request):
     """
@@ -62,15 +74,17 @@ def image_detection(request):
     """
     return render(request, 'image_detection.html')
 
+
 def capture_expression(request):
     """
     Handle the POST request to capture an image and detect the facial expression.
     """
     if request.method == 'POST':
         try:
+            # Check if an image file is uploaded
             if 'image' in request.FILES:
                 image_data = request.FILES['image']
-            elif 'camera_image' in request.FILES:
+            elif 'camera_image' in request.FILES:  # Check if a camera image is provided
                 image_data = request.FILES['camera_image']
             else:
                 return JsonResponse({'error': 'No image provided'})

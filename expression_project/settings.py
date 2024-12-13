@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-1it6zg0=9oqxh=(=#7fh1crdewk46bt@n(s(t#hn$n%1icungh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", '.vercel.app', '.onrender.com']
 CSRF_TRUSTED_ORIGINS = [
     'https://7b9b-103-150-208-94.ngrok-free.app'
 ]
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
