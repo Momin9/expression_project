@@ -115,7 +115,7 @@ sqlparse==0.5.2
 stack-data==0.6.3
 tensorboard==2.13.0
 tensorboard-data-server==0.7.2
-tensorflow==2.13.1
+tensorflow-cpu==2.13.0
 tensorflow-estimator==2.13.0
 tensorflow-io-gcs-filesystem==0.34.0
 termcolor==2.4.0
