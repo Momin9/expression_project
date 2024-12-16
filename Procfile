@@ -1,1 +1,1 @@
-web: gunicorn --config gunicorn.conf.py expression_project.wsgi && pip install -r requirements.txt
+web: gunicorn expression_project.wsgi --log-file - && pip install -r requirements.txt
