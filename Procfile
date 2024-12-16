@@ -1,1 +1,2 @@
-web: gunicorn expression_project.wsgi --log-file - && pip install -r requirements.txt
+release: python manage.py migrate
+web: gunicorn smart_home_41612.wsgi --log-file -
