@@ -1,83 +1,116 @@
-import cv2
+import os
+import shutil
 import numpy as np
-from django.http import JsonResponse
+from PIL import Image
+from deepface import DeepFace
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import render
+import requests
 
-from expression_model.Final_Expression_detection import load_expression_model
+# Paths for training data
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MEDIA_DIR = os.path.join(BASE_DIR, '../data/train/')
+os.makedirs(MEDIA_DIR, exist_ok=True)  # Ensure MEDIA_DIR exists
 
-# Load the model globally
-model = load_expression_model()
+# Emotion mappings
+emoji_map = {
+    "angry": "😡",
+    "disgust": "🤢",
+    "fear": "😨",
+    "happy": "😊",
+    "neutral": "😐",
+    "sad": "😢",
+    "surprise": "😲",
+}
 
-
-def preprocess_image(image):
+# Helper Functions
+def detect_features(image):
     """
-    Preprocess the image to match model training preprocessing.
+    Use DeepFace to detect age, gender, emotion, and race from the image.
     """
-    image = cv2.resize(image, (224, 224))  # Resize to model input size
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB if needed
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
-    image = image / 255.0  # Normalize to [0, 1]
-    return image
+    try:
+        result = DeepFace.analyze(
+            img_path=image,
+            actions=['age', 'gender', 'emotion', 'race'],
+            enforce_detection=False
+        )
 
+        # Extract key details
+        features = {
+            "age": result[0]['age'],
+            "gender": result[0]['gender'],
+            "emotion": result[0]['dominant_emotion'],
+            "race": result[0]['dominant_race'],
+            "emoji": emoji_map.get(result[0]['dominant_emotion'], "")
+        }
+        return features
+    except Exception as e:
+        return {"error": str(e)}
 
-def detect_expression(image):
+def online_train(image_path, emotion):
     """
-    Detect facial expression from the given image.
+    Save the image to the appropriate emotion directory for self-training.
     """
-    image = preprocess_image(image)  # Preprocess the image
+    try:
+        emotion_dir = os.path.join(MEDIA_DIR, emotion)
+        os.makedirs(emotion_dir, exist_ok=True)
+        save_path = os.path.join(emotion_dir, os.path.basename(image_path))
+        shutil.move(image_path, save_path)
+    except Exception as e:
+        print(f"Error during self-training: {str(e)}")
 
-    # Predict the expression
-    prediction = model.predict(image)
-    print("Prediction Probabilities:", prediction)  # Debug: Print raw predictions
-
-    expression_map = {
-        0: 'angry',
-        1: 'disgust',
-        2: 'fear',
-        3: 'happy',
-        4: 'neutral',
-        5: 'sad',
-        6: 'surprise'
-    }
-    emoji_map = {
-        'angry': '😡',
-        'disgust': '🤢',
-        'fear': '😨',
-        'happy': '😊',
-        'neutral': '😐',
-        'sad': '😢',
-        'surprise': '😲'
-    }
-
-    detected_expression = expression_map[np.argmax(prediction)]
-    detected_emoji = emoji_map[detected_expression]
-    return detected_expression, detected_emoji
-
-
+# View Functions
 def index(request):
     """
-    Renders the landing page with two buttons.
+    Render the landing page.
     """
     return render(request, 'index.html')
 
+def image_detection(request):
+    """
+    Handle image uploads and detect age, gender, emotion, and race.
+    """
+    if request.method == 'POST':
+        try:
+            # Check if an image file is provided
+            if 'image' not in request.FILES:
+                return JsonResponse({'status': 'error', 'message': 'No image provided'})
+
+            image = request.FILES['image']
+            image_path = os.path.join(MEDIA_DIR, 'uploaded_image.jpg')
+
+            # Save the uploaded image temporarily
+            with open(image_path, 'wb+') as destination:
+                for chunk in image.chunks():
+                    destination.write(chunk)
+
+            # Detect features
+            features = detect_features(image_path)
+
+            if "error" in features:
+                return JsonResponse({'status': 'error', 'message': features['error']})
+
+            # Optional self-training based on emotion
+            emotion = features.get('emotion')
+            if emotion:
+                online_train(image_path, emotion)
+
+            return JsonResponse({'status': 'success', **features})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return render(request, 'image_detection.html')
 
 def live_detection(request):
     """
-    Renders the live detection page.
+    Render live detection page.
     """
     return render(request, 'live_detection.html')
 
-
-def image_detection(request):
-    """
-    Renders the image upload detection page.
-    """
-    return render(request, 'image_detection.html')
-
-
 def capture_expression(request):
     """
-    Handle the POST request to capture an image and detect the facial expression.
+    Handle POST requests for live detection.
     """
     if request.method == 'POST':
         try:
@@ -89,14 +122,35 @@ def capture_expression(request):
             else:
                 return JsonResponse({'error': 'No image provided'})
 
-            # Convert image data to OpenCV format
-            np_arr = np.frombuffer(image_data.read(), np.uint8)
-            image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            image_path = os.path.join(MEDIA_DIR, 'captured_image.jpg')
 
-            # Detect expression and emoji
-            expression, emoji = detect_expression(image)
-            return JsonResponse({'expression': expression, 'emoji': emoji})
+            # Save the captured image temporarily
+            with open(image_path, 'wb+') as destination:
+                for chunk in image_data.chunks():
+                    destination.write(chunk)
+
+            # Detect features
+            features = detect_features(image_path)
+
+            if "error" in features:
+                return JsonResponse({'status': 'error', 'message': features['error'], "status_code": 400})
+
+            # Optional self-training based on emotion
+            emotion = features.get('emotion')
+            if emotion:
+                online_train(image_path, emotion)
+
+            return JsonResponse({'status': 'success', **features})
+
         except Exception as e:
-            return JsonResponse({'error': str(e)})
+            return JsonResponse({'status': 'error', 'message': str(e), "status_code": 400})
 
-    return JsonResponse({'error': 'Invalid request method'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method', "status_code": 405})
+
+def get_video_url(request):
+    """
+    Stream a video from an external URL.
+    """
+    video_url = "https://player.castr.com/vod/KOEdOwHqSL1e960u"
+    response = requests.get(video_url, stream=True)
+    return StreamingHttpResponse(response.iter_content(chunk_size=8192), content_type="video/mp4")

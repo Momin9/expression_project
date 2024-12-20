@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Expression Detection</title>
+  <title>Image Analysis</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.0/mdb.min.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
@@ -32,13 +32,6 @@
       height: 100%;
       color: white;
     }
-    h1 {
-      font-size: 2.5rem;
-      text-shadow: 2px 2px 5px #000;
-    }
-    form {
-      margin-top: 20px;
-    }
     img {
       max-width: 100%;
       max-height: 300px;
@@ -56,29 +49,22 @@
       margin-top: 20px;
       font-size: 1.5rem;
     }
-    #clear-btn {
-      margin-top: 10px;
-    }
   </style>
 </head>
 <body>
-  <!-- Background Video -->
-  <video autoplay muted loop class="bg-video">
+<video autoplay muted loop class="bg-video">
     <source src="{% static 'videos/animation1_video.mp4' %}" type="video/mp4">
     Your browser does not support the video tag.
-  </video>
-
-  <!-- Main Content -->
-  <div class="content">
-    <h1>Image Expression Detection</h1>
+</video>
+<div class="content">
+    <h1>Image Analysis</h1>
     <form id="upload-form" enctype="multipart/form-data" method="POST">
       {% csrf_token %}
       <input type="file" id="image" name="image" accept="image/*" class="form-control mb-3">
-      <button type="button" class="btn btn-primary" onclick="detectExpression()">Detect Expression</button>
+      <button type="button" class="btn btn-primary" onclick="detectFeatures()">Analyze</button>
     </form>
     <img id="preview" style="display:none;" />
     <div id="result" class="result"></div>
-    <button id="clear-btn" class="btn btn-secondary" onclick="clearResult()">Clear</button>
   </div>
 
   <script>
@@ -86,7 +72,6 @@
     const preview = document.getElementById('preview');
     const resultDiv = document.getElementById('result');
 
-    // Show the image preview when a file is selected
     input.addEventListener('change', () => {
       const file = input.files[0];
       if (file) {
@@ -95,43 +80,40 @@
       }
     });
 
-    // Function to detect the expression
-    function detectExpression() {
+    function detectFeatures() {
       const file = input.files[0];
       if (!file) {
-        alert('Please select an image first!');
+        alert('Please select an image!');
         return;
       }
 
       const formData = new FormData();
       formData.append('image', file);
 
-      fetch('/capture-expression/', {
+      fetch('/image-detection/', {
         method: 'POST',
         headers: {
           'X-CSRFToken': '{{ csrf_token }}',
         },
         body: formData,
       })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.error) {
-            resultDiv.textContent = `Error: ${data.error}`;
-          } else {
-            resultDiv.textContent = `Expression: ${data.expression} ${data.emoji}`;
-          }
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-          resultDiv.textContent = 'An error occurred. Please try again.';
-        });
-    }
-
-    // Function to clear the result
-    function clearResult() {
-      resultDiv.textContent = '';
-      preview.style.display = 'none';
-      input.value = '';
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === 'success') {
+          resultDiv.innerHTML = `
+            <p>Age: ${data.age}</p>
+            <p>Gender: ${data.gender}</p>
+            <p>Emotion: ${data.emotion} ${data.emoji}</p>
+            <p>Race: ${data.race}</p>
+          `;
+        } else {
+          resultDiv.textContent = `Error: ${data.message}`;
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        resultDiv.textContent = 'An error occurred. Please try again.';
+      });
     }
   </script>
 </body>
