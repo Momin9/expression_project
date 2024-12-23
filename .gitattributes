@@ -1,2 +1,4 @@
 static/videos/animation1_video.mp4 filter=lfs diff=lfs merge=lfs -text
-templates/1943483-uhd_3840_2160_25fps.mp4 filter=lfs diff=lfs merge=lfs -text
+expression_app/expression_model.h5 filter=lfs diff=lfs merge=lfs -text
+expression_model/mobilenet_1_0_224_tf_no_top.h5 filter=lfs diff=lfs merge=lfs -text
+data filter=lfs diff=lfs merge=lfs -text
