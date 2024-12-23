@@ -1,0 +1,8 @@
+staticfiles/
+*.model
+*.csv
+media/
+data/
+expression_app/expression_model.h5
+expression_model/mobilenet_1_0_224_tf_no_top.h5
+static/videos/animation1_video.mp4
